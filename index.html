@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Build your monster</title>
+<style>
+  :root{
+    --ink:#241C3B;
+    --shell:#2B2148;
+    --shell-dark:#211940;
+    --panel:#392C63;
+    --paper:#F4EFE1;
+    --accent:#FFC94A;
+    --font-display:"Chalkboard SE","Marker Felt","Comic Sans MS",system-ui,sans-serif;
+    --font-ui:"Avenir Next","Avenir","Segoe UI",system-ui,sans-serif;
+  }
+
+  *{box-sizing:border-box;}
+
+  html,body{
+    margin:0;padding:0;height:100%;
+    overscroll-behavior:none;
+    -webkit-user-select:none;user-select:none;
+    -webkit-touch-callout:none;
+    -webkit-tap-highlight-color:transparent;
+  }
+
+  body{
+    position:fixed;inset:0;
+    background:var(--shell);
+    font-family:var(--font-ui);
+    color:var(--paper);
+    touch-action:none;
+  }
+
+  .app{
+    display:flex;flex-direction:column;
+    height:100%;
+    padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+
+  /* ---------- header ---------- */
+  header{
+    flex:0 0 auto;
+    display:flex;align-items:center;justify-content:space-between;
+    gap:12px;
+    padding:10px 16px;
+    background:var(--shell-dark);
+  }
+  h1{
+    margin:0;
+    font-family:var(--font-display);
+    font-size:clamp(18px,2.6vw,26px);
+    font-weight:400;
+    letter-spacing:.5px;
+  }
+  h1 .dot{color:var(--accent);}
+
+  /* ---------- main split ---------- */
+  main{
+    flex:1 1 auto;min-height:0;
+    display:flex;
+  }
+
+  .panel{
+    flex:0 0 150px;
+    display:flex;flex-direction:column;
+    gap:14px;
+    padding:14px 12px;
+    background:var(--panel);
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+
+  .field-label{
+    font-size:11px;text-transform:uppercase;letter-spacing:1.4px;
+    opacity:.65;margin-bottom:6px;
+  }
+
+  .colour-row{display:flex;align-items:center;gap:8px;}
+  .swatch{
+    flex:0 0 auto;width:28px;height:28px;border-radius:8px;
+    border:3px solid var(--ink);
+    box-shadow:0 2px 0 rgba(0,0,0,.25);
+  }
+  select{
+    flex:1 1 auto;min-width:0;
+    font-family:var(--font-ui);font-size:17px;font-weight:600;
+    color:var(--ink);background:var(--paper);
+    border:3px solid var(--ink);border-radius:10px;
+    padding:8px 6px;
+    appearance:none;-webkit-appearance:none;
+    text-align:center;
+  }
+
+  .parts{display:flex;flex-direction:column;gap:10px;}
+  .tile{
+    display:flex;flex-direction:column;align-items:center;gap:2px;
+    padding:8px 4px 6px;
+    background:var(--paper);
+    border:3px solid var(--ink);
+    border-radius:14px;
+    box-shadow:0 3px 0 rgba(0,0,0,.28);
+    touch-action:none;cursor:grab;
+    transition:transform .12s ease;
+  }
+  .tile:active{transform:scale(.96);}
+  .tile svg{display:block;height:62px;width:auto;}
+  .tile span{
+    font-family:var(--font-display);
+    font-size:15px;color:var(--ink);
+  }
+
+  /* ---------- stage ---------- */
+  .stage-wrap{flex:1 1 auto;min-width:0;padding:12px;}
+  #stage{
+    position:relative;
+    width:100%;height:100%;
+    background-color:var(--paper);
+    background-image:radial-gradient(rgba(36,28,59,.11) 1.6px,transparent 1.6px);
+    background-size:26px 26px;
+    border-radius:18px;
+    border:3px solid var(--ink);
+    overflow:hidden;
+    touch-action:none;
+  }
+
+  .hint{
+    position:absolute;inset:0;
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--font-display);
+    font-size:clamp(16px,2.2vw,22px);
+    color:rgba(36,28,59,.42);
+    pointer-events:none;text-align:center;padding:20px;
+  }
+
+  .piece{
+    position:absolute;
+    touch-action:none;
+    will-change:transform;
+  }
+  .piece svg{
+    display:block;width:100%;height:100%;
+    filter:drop-shadow(0 3px 0 rgba(36,28,59,.16));
+    pointer-events:none;
+  }
+  .piece.selected{
+    outline:3px dashed var(--accent);
+    outline-offset:6px;
+    border-radius:6px;
+  }
+
+  /* ---------- toolbar ---------- */
+  footer{
+    flex:0 0 auto;
+    display:flex;gap:8px;justify-content:center;flex-wrap:wrap;
+    padding:10px 12px;
+    background:var(--shell-dark);
+  }
+  .btn{
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    min-width:74px;padding:6px 12px 5px;
+    font-family:var(--font-ui);
+    background:var(--paper);color:var(--ink);
+    border:3px solid var(--ink);border-radius:12px;
+    box-shadow:0 3px 0 rgba(0,0,0,.3);
+    cursor:pointer;touch-action:manipulation;
+    transition:transform .1s ease;
+  }
+  .btn:active{transform:translateY(3px);box-shadow:0 0 0 rgba(0,0,0,0);}
+  .btn .glyph{font-size:20px;line-height:1;font-weight:700;}
+  .btn .lbl{font-size:11px;letter-spacing:.6px;text-transform:lowercase;margin-top:2px;}
+  .btn.is-off{opacity:.34;pointer-events:none;}
+  .btn.ghost{background:transparent;color:var(--paper);border-color:rgba(244,239,225,.5);box-shadow:none;}
+  .btn.ghost .glyph{font-size:15px;}
+
+  /* ---------- confirm ---------- */
+  .veil{
+    position:absolute;inset:0;
+    display:none;align-items:center;justify-content:center;
+    background:rgba(36,28,59,.55);
+    border-radius:15px;
+  }
+  .veil.open{display:flex;}
+  .card{
+    background:var(--paper);color:var(--ink);
+    border:3px solid var(--ink);border-radius:16px;
+    padding:18px 22px;text-align:center;
+    box-shadow:0 6px 0 rgba(0,0,0,.3);
+  }
+  .card p{margin:0 0 14px;font-family:var(--font-display);font-size:19px;}
+  .card .row{display:flex;gap:10px;justify-content:center;}
+
+  @media (max-width:620px){
+    .panel{flex-basis:118px;}
+    .tile svg{height:46px;}
+    .btn{min-width:60px;padding:5px 8px 4px;}
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    *{transition:none !important;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <h1>Build your monster<span class="dot">.</span></h1>
+    <button class="btn ghost" id="resetBtn"><span class="glyph">↺</span><span class="lbl">start again</span></button>
+  </header>
+
+  <main>
+    <aside class="panel">
+      <div>
+        <div class="field-label">colour</div>
+        <div class="colour-row">
+          <div class="swatch" id="swatch"></div>
+          <select id="colourPicker" aria-label="Choose a colour">
+            <option value="red">red</option>
+            <option value="blue">blue</option>
+            <option value="white">white</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <div class="field-label">parts</div>
+        <div class="parts" id="parts"></div>
+      </div>
+    </aside>
+
+    <section class="stage-wrap">
+      <div id="stage">
+        <div class="hint" id="hint">Drag a part onto the paper</div>
+        <div class="veil" id="veil">
+          <div class="card">
+            <p>Clear the whole monster?</p>
+            <div class="row">
+              <button class="btn" id="confirmYes"><span class="glyph">✓</span><span class="lbl">yes</span></button>
+              <button class="btn" id="confirmNo"><span class="glyph">✕</span><span class="lbl">no</span></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <button class="btn is-off" data-act="bigger"><span class="glyph">＋</span><span class="lbl">bigger</span></button>
+    <button class="btn is-off" data-act="smaller"><span class="glyph">−</span><span class="lbl">smaller</span></button>
+    <button class="btn is-off" data-act="turn"><span class="glyph">↻</span><span class="lbl">turn</span></button>
+    <button class="btn is-off" data-act="back"><span class="glyph">▤</span><span class="lbl">send back</span></button>
+    <button class="btn is-off" data-act="delete"><span class="glyph">✕</span><span class="lbl">delete</span></button>
+  </footer>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var COLOURS = { red:"#E24A3B", blue:"#3B77D8", white:"#FFFFFF" };
+
+  var PARTS = {
+    body: {
+      label:"body",
+      vb:[120,100],
+      d:"M62 5 C93 3 116 24 115 52 C114 81 91 97 59 96 C27 95 5 79 6 51 C7 23 32 7 62 5 Z",
+      w:200
+    },
+    arm: {
+      label:"arm",
+      vb:[44,120],
+      d:"M22 6 C29 6 34 11 34 18 L34 76 C40 80 42 86 42 93 C42 104 33 113 22 113 C11 113 2 104 2 93 C2 86 4 80 10 76 L10 18 C10 11 15 6 22 6 Z",
+      w:52
+    },
+    leg: {
+      label:"leg",
+      vb:[62,118],
+      d:"M5 22 C5 12 12 4 21 4 C30 4 37 12 37 22 L37 86 L53 86 C58 86 61 90 61 96 L61 104 C61 110 57 114 51 114 L13 114 C8 114 5 110 5 104 Z",
+      w:66
+    }
+  };
+
+  var stage    = document.getElementById("stage");
+  var hint     = document.getElementById("hint");
+  var veil     = document.getElementById("veil");
+  var picker   = document.getElementById("colourPicker");
+  var swatch   = document.getElementById("swatch");
+  var partsBox = document.getElementById("parts");
+
+  var colour   = "red";
+  var selected = null;
+  var zTop     = 1;
+  var state    = new WeakMap();
+
+  /* ---------- drawing ---------- */
+
+  function svgFor(key, fill){
+    var p = PARTS[key];
+    return '<svg viewBox="0 0 ' + p.vb[0] + ' ' + p.vb[1] + '" xmlns="http://www.w3.org/2000/svg">' +
+           '<path d="' + p.d + '" fill="' + fill + '" stroke="#241C3B" stroke-width="5" ' +
+           'stroke-linejoin="round" stroke-linecap="round"/></svg>';
+  }
+
+  function renderPalette(){
+    swatch.style.background = COLOURS[colour];
+    partsBox.innerHTML = "";
+    Object.keys(PARTS).forEach(function(key){
+      var tile = document.createElement("div");
+      tile.className = "tile";
+      tile.innerHTML = svgFor(key, COLOURS[colour]) + "<span>" + PARTS[key].label + "</span>";
+      tile.addEventListener("pointerdown", function(ev){ spawn(key, ev); });
+      partsBox.appendChild(tile);
+    });
+  }
+
+  /* ---------- pieces ---------- */
+
+  function createPiece(key, fill, cx, cy){
+    var p = PARTS[key];
+    var w = p.w, h = p.w * p.vb[1] / p.vb[0];
+
+    var el = document.createElement("div");
+    el.className = "piece";
+    el.style.width  = w + "px";
+    el.style.height = h + "px";
+    el.innerHTML = svgFor(key, fill);
+
+    state.set(el, { x:cx, y:cy, scale:1, rot:0, pointers:new Map(), gesture:null });
+    stage.appendChild(el);
+    place(el);
+    bindPiece(el);
+    hint.style.display = "none";
+    return el;
+  }
+
+  function place(el){
+    var s = state.get(el);
+    var b = stage.getBoundingClientRect();
+    s.x = Math.max(16, Math.min(b.width  - 16, s.x));
+    s.y = Math.max(16, Math.min(b.height - 16, s.y));
+    el.style.left = s.x + "px";
+    el.style.top  = s.y + "px";
+    el.style.transform = "translate(-50%,-50%) rotate(" + s.rot + "deg) scale(" + s.scale + ")";
+  }
+
+  function select(el){
+    if (selected) selected.classList.remove("selected");
+    selected = el;
+    if (el){
+      el.classList.add("selected");
+      el.style.zIndex = ++zTop;
+    }
+    document.querySelectorAll("footer .btn").forEach(function(b){
+      b.classList.toggle("is-off", !el);
+    });
+  }
+
+  /* ---------- dragging a new part out of the panel ---------- */
+
+  function spawn(key, ev){
+    ev.preventDefault();
+    var b  = stage.getBoundingClientRect();
+    var el = createPiece(key, COLOURS[colour], ev.clientX - b.left, ev.clientY - b.top);
+    select(el);
+
+    var id = ev.pointerId;
+
+    function move(e){
+      if (e.pointerId !== id) return;
+      var s = state.get(el);
+      s.x = e.clientX - b.left;
+      s.y = e.clientY - b.top;
+      place(el);
+    }
+    function up(e){
+      if (e.pointerId !== id) return;
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      window.removeEventListener("pointercancel", up);
+    }
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+    window.addEventListener("pointercancel", up);
+  }
+
+  /* ---------- moving, pinching and turning a placed piece ---------- */
+
+  function bindPiece(el){
+    el.addEventListener("pointerdown", function(e){
+      e.preventDefault();
+      e.stopPropagation();
+      var s = state.get(el);
+      el.setPointerCapture(e.pointerId);
+      s.pointers.set(e.pointerId, { x:e.clientX, y:e.clientY });
+      select(el);
+      resetGesture(el);
+    });
+
+    el.addEventListener("pointermove", function(e){
+      var s = state.get(el);
+      if (!s.pointers.has(e.pointerId)) return;
+      s.pointers.set(e.pointerId, { x:e.clientX, y:e.clientY });
+
+      var pts = Array.from(s.pointers.values());
+      var g = s.gesture;
+      if (!g) return;
+
+      if (pts.length === 1){
+        s.x = g.x0 + (pts[0].x - g.ax);
+        s.y = g.y0 + (pts[0].y - g.ay);
+      } else {
+        var dx = pts[1].x - pts[0].x, dy = pts[1].y - pts[0].y;
+        var dist  = Math.hypot(dx, dy);
+        var angle = Math.atan2(dy, dx) * 180 / Math.PI;
+        var mx = (pts[0].x + pts[1].x) / 2, my = (pts[0].y + pts[1].y) / 2;
+        s.scale = Math.max(0.25, Math.min(5, g.scale0 * (dist / g.dist0)));
+        s.rot   = g.rot0 + (angle - g.angle0);
+        s.x = g.x0 + (mx - g.ax);
+        s.y = g.y0 + (my - g.ay);
+      }
+      place(el);
+    });
+
+    function release(e){
+      var s = state.get(el);
+      if (!s.pointers.has(e.pointerId)) return;
+      s.pointers.delete(e.pointerId);
+      if (el.hasPointerCapture && el.hasPointerCapture(e.pointerId)) {
+        el.releasePointerCapture(e.pointerId);
+      }
+      resetGesture(el);
+    }
+    el.addEventListener("pointerup", release);
+    el.addEventListener("pointercancel", release);
+  }
+
+  function resetGesture(el){
+    var s = state.get(el);
+    var pts = Array.from(s.pointers.values());
+    if (pts.length === 0){ s.gesture = null; return; }
+    if (pts.length === 1){
+      s.gesture = { ax:pts[0].x, ay:pts[0].y, x0:s.x, y0:s.y };
+    } else {
+      var dx = pts[1].x - pts[0].x, dy = pts[1].y - pts[0].y;
+      s.gesture = {
+        ax:(pts[0].x + pts[1].x) / 2,
+        ay:(pts[0].y + pts[1].y) / 2,
+        x0:s.x, y0:s.y,
+        dist0:Math.max(1, Math.hypot(dx, dy)),
+        angle0:Math.atan2(dy, dx) * 180 / Math.PI,
+        scale0:s.scale, rot0:s.rot
+      };
+    }
+  }
+
+  /* ---------- toolbar ---------- */
+
+  document.querySelector("footer").addEventListener("click", function(e){
+    var btn = e.target.closest(".btn");
+    if (!btn || !selected) return;
+    var s = state.get(selected);
+
+    switch (btn.dataset.act){
+      case "bigger":  s.scale = Math.min(5, s.scale * 1.2); place(selected); break;
+      case "smaller": s.scale = Math.max(0.25, s.scale / 1.2); place(selected); break;
+      case "turn":    s.rot += 30; place(selected); break;
+      case "back":    selected.style.zIndex = 0; zTop = Math.max(zTop, 1); break;
+      case "delete":
+        selected.remove();
+        select(null);
+        if (!stage.querySelector(".piece")) hint.style.display = "";
+        break;
+    }
+  });
+
+  stage.addEventListener("pointerdown", function(){ select(null); });
+
+  /* ---------- colour ---------- */
+
+  picker.addEventListener("change", function(){
+    colour = picker.value;
+    renderPalette();
+  });
+
+  /* ---------- start again ---------- */
+
+  document.getElementById("resetBtn").addEventListener("click", function(){
+    if (!stage.querySelector(".piece")) return;
+    veil.classList.add("open");
+  });
+  document.getElementById("confirmNo").addEventListener("click", function(){
+    veil.classList.remove("open");
+  });
+  document.getElementById("confirmYes").addEventListener("click", function(){
+    Array.prototype.forEach.call(stage.querySelectorAll(".piece"), function(p){ p.remove(); });
+    select(null);
+    hint.style.display = "";
+    veil.classList.remove("open");
+  });
+  veil.addEventListener("pointerdown", function(e){ e.stopPropagation(); });
+
+  window.addEventListener("contextmenu", function(e){ e.preventDefault(); });
+
+  renderPalette();
+})();
+</script>
+</body>
+</html>

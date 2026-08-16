@@ -4,6 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Build your monster</title>
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<link rel="icon" href="./icon-192.png">
+<meta name="theme-color" content="#2B2148">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Monster">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <style>
   :root{
     --ink:#241C3B;
@@ -92,6 +100,12 @@
     padding:8px 6px;
     appearance:none;-webkit-appearance:none;
     text-align:center;
+  }
+
+  .status{
+    margin-top:auto;padding-top:8px;
+    font-size:10px;letter-spacing:.9px;
+    opacity:.45;text-align:center;
   }
 
   .parts{display:flex;flex-direction:column;gap:10px;}
@@ -228,6 +242,7 @@
         <div class="field-label">parts</div>
         <div class="parts" id="parts"></div>
       </div>
+      <div class="status" id="status">v1</div>
     </aside>
 
     <section class="stage-wrap">
@@ -505,6 +520,26 @@
   window.addEventListener("contextmenu", function(e){ e.preventDefault(); });
 
   renderPalette();
+
+  /* ---------- offline storage ---------- */
+
+  var VERSION = "v1";
+  var statusEl = document.getElementById("status");
+
+  function showStatus(){
+    var saved = ("serviceWorker" in navigator) && navigator.serviceWorker.controller;
+    statusEl.textContent = VERSION + (saved ? " · saved on this iPad" : "");
+  }
+
+  if ("serviceWorker" in navigator){
+    window.addEventListener("load", function(){
+      navigator.serviceWorker.register("./sw.js", { scope:"./" })
+        .then(showStatus)
+        .catch(function(){ statusEl.textContent = VERSION; });
+    });
+    navigator.serviceWorker.addEventListener("controllerchange", showStatus);
+  }
+  showStatus();
 })();
 </script>
 </body>

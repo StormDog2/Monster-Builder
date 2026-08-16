@@ -1,7 +1,7 @@
 /* Build your monster - offline storage
    Bump VERSION whenever index.html changes, so iPads pick up the new copy. */
 
-var VERSION = "v3";
+var VERSION = "v4";
 var CACHE   = "monster-" + VERSION;
 
 var ASSETS = [

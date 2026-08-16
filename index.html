@@ -149,6 +149,38 @@
     pointer-events:none;text-align:center;padding:20px;
   }
 
+  .counter{
+    position:absolute;top:10px;right:12px;z-index:99999;
+    font-family:var(--font-ui);font-size:12px;font-weight:600;
+    letter-spacing:.5px;color:var(--ink);
+    background:rgba(255,255,255,.72);
+    border:2px solid rgba(36,28,59,.28);
+    border-radius:999px;padding:3px 10px;
+    pointer-events:none;opacity:0;
+    transition:opacity .2s ease,background .2s ease,border-color .2s ease;
+  }
+  .counter.show{opacity:.85;}
+  .counter.full{
+    background:var(--accent);border-color:var(--ink);opacity:1;
+  }
+  .counter.bump{animation:bump .3s ease;}
+  @keyframes bump{
+    0%,100%{transform:scale(1);}
+    35%{transform:scale(1.18);}
+  }
+
+  .counter{
+    position:absolute;top:8px;right:10px;z-index:500;
+    font-family:var(--font-ui);font-size:12px;font-weight:700;letter-spacing:.5px;
+    color:rgba(36,28,59,.45);background:rgba(255,255,255,.62);
+    border-radius:20px;padding:3px 10px;
+    pointer-events:none;
+  }
+  .counter.warn{color:#8A5300;background:rgba(255,201,74,.7);}
+  .counter.full{color:#fff;background:#E24A3B;}
+  .counter.bump{animation:bump .32s ease;}
+  @keyframes bump{0%{transform:scale(1)}45%{transform:scale(1.3)}100%{transform:scale(1)}}
+
   .piece{
     position:absolute;
     touch-action:none;
@@ -189,9 +221,82 @@
   .btn.ghost{background:transparent;color:var(--paper);border-color:rgba(244,239,225,.5);box-shadow:none;}
   .btn.ghost .glyph{font-size:15px;}
 
+  /* ---------- overlays: share + gallery ---------- */
+  .sheet{
+    position:fixed;inset:0;z-index:9000;
+    display:none;align-items:center;justify-content:center;
+    background:rgba(20,15,36,.82);
+    padding:18px;
+  }
+  .sheet.open{display:flex;}
+  .sheet-inner{
+    background:var(--paper);color:var(--ink);
+    border:3px solid var(--ink);border-radius:20px;
+    box-shadow:0 8px 0 rgba(0,0,0,.35);
+    padding:18px;
+    max-width:min(92vw,760px);max-height:92vh;
+    display:flex;flex-direction:column;gap:12px;
+    overflow:auto;
+  }
+  .sheet h2{
+    margin:0;font-family:var(--font-display);font-weight:400;
+    font-size:clamp(17px,2.4vw,23px);text-align:center;
+  }
+  .sheet .sub{margin:0;text-align:center;font-size:13px;opacity:.7;}
+
+  .qr-card{
+    align-self:center;
+    background:#fff;padding:14px;border-radius:12px;
+    border:3px solid var(--ink);
+  }
+  .qr-card svg{display:block;width:min(58vw,300px);height:auto;}
+
+  .name-row{display:flex;gap:8px;align-items:center;justify-content:center;}
+  .name-row input{
+    font-family:var(--font-ui);font-size:16px;
+    padding:8px 10px;width:min(48vw,190px);
+    border:3px solid var(--ink);border-radius:10px;
+    background:#fff;color:var(--ink);
+  }
+
+  .code-line{
+    font-family:ui-monospace,Menlo,Consolas,monospace;
+    font-size:11px;word-break:break-all;text-align:center;
+    background:rgba(36,28,59,.07);border-radius:8px;padding:8px;
+    max-height:64px;overflow:auto;
+  }
+
+  .sheet-actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;}
+
+  .gallery{
+    display:grid;gap:12px;
+    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  }
+  .g-card{
+    background:#fff;border:3px solid var(--ink);border-radius:14px;
+    padding:6px;display:flex;flex-direction:column;gap:4px;
+    cursor:pointer;
+  }
+  .g-stage{
+    position:relative;width:100%;aspect-ratio:4/3;
+    background-color:var(--paper);border-radius:8px;overflow:hidden;
+  }
+  .g-name{
+    font-family:var(--font-display);font-size:14px;text-align:center;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .gpiece{position:absolute;}
+  .gpiece svg{display:block;width:100%;height:100%;}
+
+  .g-big{position:relative;width:min(84vw,680px);aspect-ratio:4/3;
+         background-color:var(--paper);border:3px solid var(--ink);
+         border-radius:14px;overflow:hidden;align-self:center;}
+
+  .empty-note{text-align:center;opacity:.6;font-size:14px;padding:20px;}
+
   /* ---------- confirm ---------- */
   .veil{
-    position:absolute;inset:0;
+    position:absolute;inset:0;z-index:100000;
     display:none;align-items:center;justify-content:center;
     background:rgba(36,28,59,.55);
     border-radius:15px;
@@ -222,7 +327,11 @@
 
   <header>
     <h1>Build your monster<span class="dot">.</span></h1>
-    <button class="btn ghost" id="resetBtn"><span class="glyph">↺</span><span class="lbl">start again</span></button>
+    <div style="display:flex;gap:8px;">
+      <button class="btn ghost" id="galleryBtn" style="display:none"><span class="glyph">▦</span><span class="lbl">monsters</span></button>
+      <button class="btn ghost" id="shareBtn"><span class="glyph">▣</span><span class="lbl">share</span></button>
+      <button class="btn ghost" id="resetBtn"><span class="glyph">↺</span><span class="lbl">start again</span></button>
+    </div>
   </header>
 
   <main>
@@ -248,6 +357,8 @@
     <section class="stage-wrap">
       <div id="stage">
         <div class="hint" id="hint">Drag a part onto the paper</div>
+        <div class="counter" id="counter">0 / 60</div>
+        <div class="counter" id="counter">0 / 60</div>
         <div class="veil" id="veil">
           <div class="card">
             <p>Clear the whole monster?</p>
@@ -271,7 +382,412 @@
 
 </div>
 
+<div class="sheet" id="shareSheet">
+  <div class="sheet-inner">
+    <h2>Show your monster</h2>
+    <p class="sub">Hold the iPad up. Your teacher points a camera at this.</p>
+    <div class="name-row">
+      <input id="nameInput" type="text" maxlength="14" placeholder="your name" autocomplete="off" autocorrect="off" spellcheck="false">
+    </div>
+    <div class="qr-card" id="qrCard"></div>
+    <div class="code-line" id="codeLine"></div>
+    <div class="sheet-actions">
+      <button class="btn" id="copyBtn"><span class="glyph">⧉</span><span class="lbl">copy code</span></button>
+      <button class="btn" id="shareClose"><span class="glyph">✕</span><span class="lbl">close</span></button>
+    </div>
+  </div>
+</div>
+
+<div class="sheet" id="gallerySheet">
+  <div class="sheet-inner">
+    <h2 id="galleryTitle">Our monsters</h2>
+    <div class="gallery" id="galleryGrid"></div>
+    <div class="sheet-actions">
+      <button class="btn" id="galleryClear"><span class="glyph">🗑</span><span class="lbl">clear all</span></button>
+      <button class="btn" id="galleryClose"><span class="glyph">✕</span><span class="lbl">close</span></button>
+    </div>
+  </div>
+</div>
+
+<div class="sheet" id="bigSheet">
+  <div class="sheet-inner">
+    <h2 id="bigName"></h2>
+    <div class="g-big" id="bigStage"></div>
+    <div class="sheet-actions">
+      <button class="btn" id="bigClose"><span class="glyph">✕</span><span class="lbl">close</span></button>
+    </div>
+  </div>
+</div>
+
 <script>
+/* Minimal QR encoder - byte mode, EC level L/M, versions 1-15. */
+
+var QR = (function(){
+  "use strict";
+
+  var TOTAL = [0,26,44,70,100,134,172,196,242,292,346,404,466,532,581,655];
+
+  // [ecPerBlock, g1Blocks, g1Data, g2Blocks, g2Data]
+  var BLOCKS = {
+    L: [null,[7,1,19,0,0],[10,1,34,0,0],[15,1,55,0,0],[20,1,80,0,0],[26,1,108,0,0],
+        [18,2,68,0,0],[20,2,78,0,0],[24,2,97,0,0],[30,2,116,0,0],[18,2,68,2,69],
+        [20,4,81,0,0],[24,2,92,2,93],[26,4,107,0,0],[30,3,115,1,116],[22,5,87,1,88]],
+    M: [null,[10,1,16,0,0],[16,1,28,0,0],[26,1,44,0,0],[18,2,32,0,0],[24,2,43,0,0],
+        [16,4,27,0,0],[18,4,31,0,0],[22,2,38,2,39],[22,3,36,2,37],[26,4,43,1,44],
+        [30,1,50,4,51],[22,6,36,2,37],[22,8,37,1,38],[24,4,40,5,41],[24,5,41,5,42]]
+  };
+
+  var ALIGN = [null,[],[6,18],[6,22],[6,26],[6,30],[6,34],
+               [6,22,38],[6,24,42],[6,26,46],[6,28,50],[6,30,54],[6,32,58],
+               [6,34,62],[6,26,46,66],[6,26,48,70]];
+
+  var REMAINDER = [0,0,7,7,7,7,7,0,0,0,0,0,0,0,3,3];
+
+  var ECBITS = { L:1, M:0 };   // 2-bit EC indicator
+
+  /* ---- GF(256) ---- */
+  var EXP = new Uint8Array(512), LOG = new Uint8Array(256);
+  (function(){
+    var x = 1;
+    for (var i = 0; i < 255; i++){
+      EXP[i] = x;
+      LOG[x] = i;
+      x <<= 1;
+      if (x & 0x100) x ^= 0x11D;
+    }
+    for (var j = 255; j < 512; j++) EXP[j] = EXP[j-255];
+  })();
+
+  function mul(a,b){ return (a === 0 || b === 0) ? 0 : EXP[LOG[a] + LOG[b]]; }
+
+  function genPoly(deg){
+    var p = [1];
+    for (var i = 0; i < deg; i++){
+      var np = new Array(p.length + 1).fill(0);
+      for (var j = 0; j < p.length; j++){
+        np[j]   ^= p[j];
+        np[j+1] ^= mul(p[j], EXP[i]);
+      }
+      p = np;
+    }
+    return p;
+  }
+
+  function ecBytes(data, n){
+    var gen = genPoly(n);
+    var res = new Array(data.length + n).fill(0);
+    for (var i = 0; i < data.length; i++) res[i] = data[i];
+    for (var i = 0; i < data.length; i++){
+      var f = res[i];
+      if (f === 0) continue;
+      for (var j = 0; j < gen.length; j++) res[i+j] ^= mul(gen[j], f);
+    }
+    return res.slice(data.length);
+  }
+
+  /* ---- bit stream ---- */
+  function Bits(){ this.a = []; }
+  Bits.prototype.put = function(v, n){
+    for (var i = n - 1; i >= 0; i--) this.a.push((v >>> i) & 1);
+  };
+
+  function pickVersion(len, ec){
+    for (var v = 1; v <= 15; v++){
+      var b = BLOCKS[ec][v];
+      var dataBytes = b[1]*b[2] + b[3]*b[4];
+      var cciBits = v < 10 ? 8 : 16;
+      var need = 4 + cciBits + len*8;
+      if (need <= dataBytes * 8) return v;
+    }
+    return -1;
+  }
+
+  function buildCodewords(bytes, version, ec){
+    var b = BLOCKS[ec][version];
+    var ecLen = b[0], totalData = b[1]*b[2] + b[3]*b[4];
+    var cciBits = version < 10 ? 8 : 16;
+
+    var bs = new Bits();
+    bs.put(4, 4);
+    bs.put(bytes.length, cciBits);
+    for (var i = 0; i < bytes.length; i++) bs.put(bytes[i], 8);
+
+    var cap = totalData * 8;
+    var term = Math.min(4, cap - bs.a.length);
+    bs.put(0, term);
+    while (bs.a.length % 8 !== 0) bs.a.push(0);
+
+    var data = [];
+    for (var i = 0; i < bs.a.length; i += 8){
+      var v = 0;
+      for (var j = 0; j < 8; j++) v = (v << 1) | bs.a[i+j];
+      data.push(v);
+    }
+    var pads = [0xEC, 0x11], k = 0;
+    while (data.length < totalData) data.push(pads[k++ % 2]);
+
+    // split into blocks
+    var blocks = [], pos = 0, spec = [];
+    for (var i = 0; i < b[1]; i++) spec.push(b[2]);
+    for (var i = 0; i < b[3]; i++) spec.push(b[4]);
+
+    for (var i = 0; i < spec.length; i++){
+      var d = data.slice(pos, pos + spec[i]);
+      pos += spec[i];
+      blocks.push({ d:d, e:ecBytes(d, ecLen) });
+    }
+
+    var out = [];
+    var maxD = Math.max.apply(null, spec);
+    for (var i = 0; i < maxD; i++)
+      for (var j = 0; j < blocks.length; j++)
+        if (i < blocks[j].d.length) out.push(blocks[j].d[i]);
+    for (var i = 0; i < ecLen; i++)
+      for (var j = 0; j < blocks.length; j++) out.push(blocks[j].e[i]);
+
+    if (out.length !== TOTAL[version]) throw new Error("codeword count " + out.length);
+    return out;
+  }
+
+  /* ---- matrix ---- */
+  function makeMatrix(version){
+    var n = version * 4 + 17;
+    var m = [], r = [];
+    for (var i = 0; i < n; i++){
+      m.push(new Int8Array(n).fill(-1));
+      r.push(new Uint8Array(n));
+    }
+
+    function finder(cx, cy){
+      for (var dy = -1; dy <= 7; dy++)
+        for (var dx = -1; dx <= 7; dx++){
+          var x = cx + dx, y = cy + dy;
+          if (x < 0 || y < 0 || x >= n || y >= n) continue;
+          var on = (dx >= 0 && dx <= 6 && (dy === 0 || dy === 6)) ||
+                   (dy >= 0 && dy <= 6 && (dx === 0 || dx === 6)) ||
+                   (dx >= 2 && dx <= 4 && dy >= 2 && dy <= 4);
+          m[y][x] = on ? 1 : 0;
+          r[y][x] = 1;
+        }
+    }
+    finder(0,0); finder(n-7,0); finder(0,n-7);
+
+    // timing
+    for (var i = 8; i < n-8; i++){
+      m[6][i] = (i % 2 === 0) ? 1 : 0; r[6][i] = 1;
+      m[i][6] = (i % 2 === 0) ? 1 : 0; r[i][6] = 1;
+    }
+
+    // alignment
+    var ap = ALIGN[version];
+    for (var a = 0; a < ap.length; a++)
+      for (var b2 = 0; b2 < ap.length; b2++){
+        var cx = ap[a], cy = ap[b2];
+        var corner = (cx === 6 && cy === 6) ||
+                     (cx === 6 && cy === n-7) ||
+                     (cx === n-7 && cy === 6);
+        if (corner) continue;
+        for (var dy = -2; dy <= 2; dy++)
+          for (var dx = -2; dx <= 2; dx++){
+            var on = Math.max(Math.abs(dx), Math.abs(dy)) !== 1;
+            m[cy+dy][cx+dx] = on ? 1 : 0;
+            r[cy+dy][cx+dx] = 1;
+          }
+      }
+
+    // dark module + format reserve
+    m[n-8][8] = 1; r[n-8][8] = 1;
+    for (var i = 0; i <= 8; i++){
+      if (!r[8][i]){ r[8][i] = 1; m[8][i] = 0; }
+      if (!r[i][8]){ r[i][8] = 1; m[i][8] = 0; }
+    }
+    for (var i = n-8; i < n; i++){
+      if (!r[8][i]){ r[8][i] = 1; m[8][i] = 0; }
+      if (!r[i][8]){ r[i][8] = 1; m[i][8] = 0; }
+    }
+
+    // version info reserve (v7+)
+    if (version >= 7){
+      for (var i = 0; i < 6; i++)
+        for (var j = 0; j < 3; j++){
+          r[i][n-11+j] = 1; m[i][n-11+j] = 0;
+          r[n-11+j][i] = 1; m[n-11+j][i] = 0;
+        }
+    }
+
+    return { m:m, r:r, n:n };
+  }
+
+  function placeData(mx, cw, version){
+    var m = mx.m, r = mx.r, n = mx.n;
+    var bits = [];
+    for (var i = 0; i < cw.length; i++)
+      for (var j = 7; j >= 0; j--) bits.push((cw[i] >>> j) & 1);
+    for (var i = 0; i < REMAINDER[version]; i++) bits.push(0);
+
+    var idx = 0, up = true;
+    for (var col = n - 1; col > 0; col -= 2){
+      if (col === 6) col--;
+      for (var t = 0; t < n; t++){
+        var row = up ? (n - 1 - t) : t;
+        for (var c = 0; c < 2; c++){
+          var x = col - c;
+          if (r[row][x]) continue;
+          m[row][x] = idx < bits.length ? bits[idx] : 0;
+          idx++;
+        }
+      }
+      up = !up;
+    }
+    return idx;
+  }
+
+  function maskFn(k, x, y){
+    switch(k){
+      case 0: return (x + y) % 2 === 0;
+      case 1: return y % 2 === 0;
+      case 2: return x % 3 === 0;
+      case 3: return (x + y) % 3 === 0;
+      case 4: return (Math.floor(y/2) + Math.floor(x/3)) % 2 === 0;
+      case 5: return ((x*y) % 2) + ((x*y) % 3) === 0;
+      case 6: return (((x*y) % 2) + ((x*y) % 3)) % 2 === 0;
+      case 7: return (((x+y) % 2) + ((x*y) % 3)) % 2 === 0;
+    }
+  }
+
+  function applyMask(mx, k){
+    var out = [];
+    for (var y = 0; y < mx.n; y++){
+      out.push(new Int8Array(mx.n));
+      for (var x = 0; x < mx.n; x++){
+        var v = mx.m[y][x];
+        out[y][x] = (!mx.r[y][x] && maskFn(k, x, y)) ? (v ^ 1) : v;
+      }
+    }
+    return out;
+  }
+
+  function formatBits(ec, mask){
+    var data = (ECBITS[ec] << 3) | mask;
+    var v = data << 10;
+    for (var i = 4; i >= 0; i--)
+      if ((v >>> (i + 10)) & 1) v ^= 0x537 << i;
+    return ((data << 10) | v) ^ 0x5412;
+  }
+
+  function versionBits(version){
+    var v = version << 12;
+    for (var i = 5; i >= 0; i--)
+      if ((v >>> (i + 12)) & 1) v ^= 0x1F25 << i;
+    return (version << 12) | v;
+  }
+
+  function writeFormat(g, n, ec, mask){
+    var f = formatBits(ec, mask);
+    for (var i = 0; i < 15; i++){
+      var bit = (f >>> i) & 1;
+      // vertical / horizontal around top-left
+      if (i < 6)       g[i][8] = bit;
+      else if (i === 6) g[7][8] = bit;
+      else if (i === 7) g[8][8] = bit;
+      else if (i === 8) g[8][7] = bit;
+      else              g[8][14 - i] = bit;
+
+      if (i < 8) g[8][n - 1 - i] = bit;
+      else       g[n - 15 + i][8] = bit;
+    }
+    g[n-8][8] = 1;
+  }
+
+  function writeVersion(g, n, version){
+    if (version < 7) return;
+    var vb = versionBits(version);
+    for (var i = 0; i < 18; i++){
+      var bit = (vb >>> i) & 1;
+      var a = Math.floor(i / 3), b = i % 3;
+      g[a][n - 11 + b] = bit;
+      g[n - 11 + b][a] = bit;
+    }
+  }
+
+  function penalty(g, n){
+    var p = 0, i, j, run, dark = 0;
+
+    for (i = 0; i < n; i++){
+      run = 1;
+      for (j = 1; j < n; j++){
+        if (g[i][j] === g[i][j-1]) run++;
+        else { if (run >= 5) p += run - 2; run = 1; }
+      }
+      if (run >= 5) p += run - 2;
+      run = 1;
+      for (j = 1; j < n; j++){
+        if (g[j][i] === g[j-1][i]) run++;
+        else { if (run >= 5) p += run - 2; run = 1; }
+      }
+      if (run >= 5) p += run - 2;
+    }
+
+    for (i = 0; i < n-1; i++)
+      for (j = 0; j < n-1; j++){
+        var s = g[i][j] + g[i][j+1] + g[i+1][j] + g[i+1][j+1];
+        if (s === 0 || s === 4) p += 3;
+      }
+
+    var pat1 = [1,0,1,1,1,0,1,0,0,0,0], pat2 = [0,0,0,0,1,0,1,1,1,0,1];
+    function match(get, len){
+      for (var a = 0; a + 11 <= len; a++){
+        var ok1 = true, ok2 = true;
+        for (var b = 0; b < 11; b++){
+          var v = get(a + b);
+          if (v !== pat1[b]) ok1 = false;
+          if (v !== pat2[b]) ok2 = false;
+        }
+        if (ok1 || ok2) p += 40;
+      }
+    }
+    for (i = 0; i < n; i++){
+      (function(row){ match(function(k){ return g[row][k]; }, n); })(i);
+      (function(col){ match(function(k){ return g[k][col]; }, n); })(i);
+    }
+
+    for (i = 0; i < n; i++) for (j = 0; j < n; j++) dark += g[i][j];
+    var pct = dark * 100 / (n * n);
+    p += Math.floor(Math.abs(pct - 50) / 5) * 10;
+
+    return p;
+  }
+
+  function encode(text, ecLevel){
+    var ec = ecLevel || "M";
+    var bytes = [];
+    for (var i = 0; i < text.length; i++){
+      var c = text.charCodeAt(i);
+      if (c < 128) bytes.push(c);
+      else throw new Error("ASCII only");
+    }
+
+    var version = pickVersion(bytes.length, ec);
+    if (version < 0) throw new Error("too long");
+
+    var cw = buildCodewords(bytes, version, ec);
+    var mx = makeMatrix(version);
+    placeData(mx, cw, version);
+
+    var best = null, bestP = Infinity, bestK = 0;
+    for (var k = 0; k < 8; k++){
+      var g = applyMask(mx, k);
+      writeFormat(g, mx.n, ec, k);
+      writeVersion(g, mx.n, version);
+      var p = penalty(g, mx.n);
+      if (p < bestP){ bestP = p; best = g; bestK = k; }
+    }
+
+    return { size:mx.n, modules:best, version:version, mask:bestK, ec:ec };
+  }
+
+  return { encode:encode };
+})();
 (function(){
   "use strict";
 
@@ -298,12 +814,61 @@
     }
   };
 
+  var MAX_PARTS = 60;
+
+  function utf8Encode(str){
+    var out = [];
+    for (var i = 0; i < str.length; i++){
+      var c = str.charCodeAt(i);
+      if (c >= 0xD800 && c <= 0xDBFF && i + 1 < str.length){
+        c = 0x10000 + ((c - 0xD800) << 10) + (str.charCodeAt(++i) - 0xDC00);
+      }
+      if (c < 0x80) out.push(c);
+      else if (c < 0x800) out.push(0xC0 | (c >> 6), 0x80 | (c & 63));
+      else if (c < 0x10000) out.push(0xE0 | (c >> 12), 0x80 | ((c >> 6) & 63), 0x80 | (c & 63));
+      else out.push(0xF0 | (c >> 18), 0x80 | ((c >> 12) & 63), 0x80 | ((c >> 6) & 63), 0x80 | (c & 63));
+    }
+    return out;
+  }
+
+  function utf8Decode(b){
+    var s = "";
+    for (var i = 0; i < b.length; ){
+      var c = b[i];
+      if (c < 0x80){ s += String.fromCharCode(c); i += 1; }
+      else if ((c & 0xE0) === 0xC0 && i + 1 < b.length){
+        s += String.fromCharCode(((c & 31) << 6) | (b[i+1] & 63)); i += 2;
+      }
+      else if ((c & 0xF0) === 0xE0 && i + 2 < b.length){
+        s += String.fromCharCode(((c & 15) << 12) | ((b[i+1] & 63) << 6) | (b[i+2] & 63)); i += 3;
+      }
+      else if ((c & 0xF8) === 0xF0 && i + 3 < b.length){
+        var cp = (((c & 7) << 18) | ((b[i+1] & 63) << 12) | ((b[i+2] & 63) << 6) | (b[i+3] & 63)) - 0x10000;
+        s += String.fromCharCode(0xD800 | (cp >> 10), 0xDC00 | (cp & 0x3FF)); i += 4;
+      }
+      else i += 1;
+    }
+    return s;
+  }
+
+  /* never cut a multi-byte character in half */
+  function trimUtf8(bytes, max){
+    if (bytes.length <= max) return bytes;
+    var n = max;
+    while (n > 0 && (bytes[n] & 0xC0) === 0x80) n--;
+    return bytes.slice(0, n);
+  }
+
   var stage    = document.getElementById("stage");
   var hint     = document.getElementById("hint");
   var veil     = document.getElementById("veil");
   var picker   = document.getElementById("colourPicker");
   var swatch   = document.getElementById("swatch");
   var partsBox = document.getElementById("parts");
+  var counter  = document.getElementById("counter");
+
+  var MAX_PARTS = 60;
+  var counterEl = document.getElementById("counter");
 
   var colour   = "red";
   var selected = null;
@@ -333,6 +898,20 @@
 
   /* ---------- pieces ---------- */
 
+  function pieceCount(){ return stage.querySelectorAll(".piece").length; }
+
+  function updateCounter(bump){
+    var n = pieceCount();
+    counter.textContent = n + " / " + MAX_PARTS;
+    counter.classList.toggle("show", n > 0);
+    counter.classList.toggle("full", n >= MAX_PARTS);
+    if (bump){
+      counter.classList.remove("bump");
+      void counter.offsetWidth;
+      counter.classList.add("bump");
+    }
+  }
+
   function createPiece(key, fill, cx, cy){
     var p = PARTS[key];
     var w = p.w, h = p.w * p.vb[1] / p.vb[0];
@@ -343,12 +922,27 @@
     el.style.height = h + "px";
     el.innerHTML = svgFor(key, fill);
 
-    state.set(el, { x:cx, y:cy, scale:1, rot:0, pointers:new Map(), gesture:null });
+    state.set(el, { key:key, x:cx, y:cy, scale:1, rot:0, z:++zTop, pointers:new Map(), gesture:null });
     stage.appendChild(el);
     place(el);
     bindPiece(el);
     hint.style.display = "none";
+    updateCounter(false);
     return el;
+  }
+
+  function partCount(){ return stage.querySelectorAll(".piece").length; }
+
+  function updateCount(bump){
+    var n = partCount();
+    counterEl.textContent = n + " / " + MAX_PARTS;
+    counterEl.classList.toggle("warn", n >= 50 && n < MAX_PARTS);
+    counterEl.classList.toggle("full", n >= MAX_PARTS);
+    if (bump){
+      counterEl.classList.remove("bump");
+      void counterEl.offsetWidth;
+      counterEl.classList.add("bump");
+    }
   }
 
   function place(el){
@@ -366,7 +960,9 @@
     selected = el;
     if (el){
       el.classList.add("selected");
-      el.style.zIndex = ++zTop;
+      var s = state.get(el);
+      s.z = ++zTop;
+      el.style.zIndex = s.z;
     }
     document.querySelectorAll("footer .btn").forEach(function(b){
       b.classList.toggle("is-off", !el);
@@ -377,6 +973,7 @@
 
   function spawn(key, ev){
     ev.preventDefault();
+    if (pieceCount() >= MAX_PARTS){ updateCounter(true); return; }
     var b  = stage.getBoundingClientRect();
     var el = createPiece(key, COLOURS[colour], ev.clientX - b.left, ev.clientY - b.top);
     select(el);
@@ -482,10 +1079,11 @@
       case "bigger":  s.scale = Math.min(5, s.scale * 1.2); place(selected); break;
       case "smaller": s.scale = Math.max(0.25, s.scale / 1.2); place(selected); break;
       case "turn":    s.rot += 30; place(selected); break;
-      case "back":    selected.style.zIndex = 0; zTop = Math.max(zTop, 1); break;
+      case "back":    s.z = 0; selected.style.zIndex = 0; break;
       case "delete":
         selected.remove();
         select(null);
+        updateCounter(false);
         if (!stage.querySelector(".piece")) hint.style.display = "";
         break;
     }
@@ -512,6 +1110,7 @@
   document.getElementById("confirmYes").addEventListener("click", function(){
     Array.prototype.forEach.call(stage.querySelectorAll(".piece"), function(p){ p.remove(); });
     select(null);
+    updateCounter(false);
     hint.style.display = "";
     veil.classList.remove("open");
   });
@@ -520,10 +1119,295 @@
   window.addEventListener("contextmenu", function(e){ e.preventDefault(); });
 
   renderPalette();
+  updateCount();
+
+  /* ---------- monster code ---------- */
+  /* Append-only lists: adding entries is safe, reordering breaks old codes. */
+
+  var PART_ORDER   = ["body","arm","leg"];
+  var COLOUR_ORDER = ["red","blue","white"];
+  var FORMAT       = 1;
+
+  var B64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+
+  function toB64(bytes){
+    var out = "";
+    for (var i = 0; i < bytes.length; i += 3){
+      var a = bytes[i], b = bytes[i+1], c = bytes[i+2];
+      out += B64[a >> 2];
+      out += B64[((a & 3) << 4) | ((b === undefined ? 0 : b) >> 4)];
+      if (b === undefined) break;
+      out += B64[((b & 15) << 2) | ((c === undefined ? 0 : c) >> 6)];
+      if (c === undefined) break;
+      out += B64[c & 63];
+    }
+    return out;
+  }
+
+  function fromB64(str){
+    var bytes = [], buf = 0, bits = 0;
+    for (var i = 0; i < str.length; i++){
+      var v = B64.indexOf(str[i]);
+      if (v < 0) continue;
+      buf = (buf << 6) | v; bits += 6;
+      if (bits >= 8){ bits -= 8; bytes.push((buf >> bits) & 255); }
+    }
+    return bytes;
+  }
+
+  function clamp(v, lo, hi){ return Math.max(lo, Math.min(hi, v)); }
+
+  function utf8Encode(str){
+    var out = [];
+    for (var i = 0; i < str.length; i++){
+      var c = str.charCodeAt(i);
+      if (c < 0x80) out.push(c);
+      else if (c < 0x800) out.push(0xC0 | (c >> 6), 0x80 | (c & 63));
+      else if (c >= 0xD800 && c < 0xDC00 && i + 1 < str.length){
+        var c2 = str.charCodeAt(++i);
+        var cp = 0x10000 + ((c - 0xD800) << 10) + (c2 - 0xDC00);
+        out.push(0xF0 | (cp >> 18), 0x80 | ((cp >> 12) & 63),
+                 0x80 | ((cp >> 6) & 63), 0x80 | (cp & 63));
+      }
+      else out.push(0xE0 | (c >> 12), 0x80 | ((c >> 6) & 63), 0x80 | (c & 63));
+    }
+    return out;
+  }
+
+  function utf8Decode(bytes){
+    var out = "", i = 0;
+    while (i < bytes.length){
+      var c = bytes[i++];
+      if (c < 0x80) out += String.fromCharCode(c);
+      else if (c >= 0xC0 && c < 0xE0) out += String.fromCharCode(((c & 31) << 6) | (bytes[i++] & 63));
+      else if (c >= 0xE0 && c < 0xF0)
+        out += String.fromCharCode(((c & 15) << 12) | ((bytes[i++] & 63) << 6) | (bytes[i++] & 63));
+      else if (c >= 0xF0){
+        var cp = ((c & 7) << 18) | ((bytes[i++] & 63) << 12) |
+                 ((bytes[i++] & 63) << 6) | (bytes[i++] & 63);
+        cp -= 0x10000;
+        out += String.fromCharCode(0xD800 + (cp >> 10), 0xDC00 + (cp & 1023));
+      }
+    }
+    return out;
+  }
+
+  function encodeMonster(name){
+    var b = stage.getBoundingClientRect();
+    var els = Array.prototype.slice.call(stage.querySelectorAll(".piece"));
+
+    els.sort(function(p, q){
+      return (state.get(p).z || 0) - (state.get(q).z || 0);
+    });
+
+    var bytes = [FORMAT];
+    var nb = trimUtf8(utf8Encode(name || ""), 24);
+    bytes.push(nb.length);
+    for (var i = 0; i < nb.length; i++) bytes.push(nb[i]);
+    bytes.push(Math.min(255, els.length));
+
+    els.forEach(function(el){
+      var s = state.get(el);
+      var pi = PART_ORDER.indexOf(s.key);
+      var ci = COLOUR_ORDER.indexOf(colourOf(el));
+      if (pi < 0 || ci < 0) return;
+      var part = PARTS[s.key];
+      var baseH = part.w * part.vb[1] / part.vb[0];
+      var frac  = (baseH * s.scale) / b.height;
+
+      bytes.push((pi << 4) | ci);
+      bytes.push(clamp(Math.round(s.x / b.width  * 255), 0, 255));
+      bytes.push(clamp(Math.round(s.y / b.height * 255), 0, 255));
+      bytes.push(clamp(Math.round(frac * 160), 1, 255));
+      bytes.push(((Math.round(s.rot / 360 * 256) % 256) + 256) % 256);
+    });
+
+    return toB64(bytes);
+  }
+
+  function colourOf(el){
+    var f = el.querySelector("path").getAttribute("fill").toUpperCase();
+    for (var k in COLOURS) if (COLOURS[k].toUpperCase() === f) return k;
+    return "red";
+  }
+
+  function decodeMonster(code){
+    var b = fromB64(code);
+    if (!b.length || b[0] !== FORMAT) return null;
+    var p = 1, nlen = b[p++], nb = [];
+    for (var i = 0; i < nlen; i++) nb.push(b[p++]);
+    var name = utf8Decode(nb);
+    var count = b[p++], pieces = [];
+    for (var i = 0; i < count; i++){
+      if (p + 4 >= b.length) break;
+      pieces.push({
+        part:   b[p] >> 4,
+        colour: b[p] & 15,
+        x: b[p+1], y: b[p+2], size: b[p+3], rot: b[p+4]
+      });
+      p += 5;
+    }
+    return { name:name, pieces:pieces, code:code };
+  }
+
+  function paintMonster(box, mon){
+    box.innerHTML = "";
+    var w = box.clientWidth, h = box.clientHeight;
+    mon.pieces.forEach(function(pc){
+      var key = PART_ORDER[pc.part];
+      var col = COLOUR_ORDER[pc.colour];
+      if (!key || !PARTS[key] || !col) return;
+      var part = PARTS[key];
+      var ph = (pc.size / 160) * h;
+      var pw = ph * part.vb[0] / part.vb[1];
+
+      var el = document.createElement("div");
+      el.className = "gpiece";
+      el.style.width  = pw + "px";
+      el.style.height = ph + "px";
+      el.style.left   = (pc.x / 255 * w) + "px";
+      el.style.top    = (pc.y / 255 * h) + "px";
+      el.style.transform = "translate(-50%,-50%) rotate(" + (pc.rot * 360 / 256) + "deg)";
+      el.innerHTML = svgFor(key, COLOURS[col]);
+      box.appendChild(el);
+    });
+  }
+
+  /* ---------- share sheet ---------- */
+
+  var shareSheet = document.getElementById("shareSheet");
+  var qrCard     = document.getElementById("qrCard");
+  var codeLine   = document.getElementById("codeLine");
+  var nameInput  = document.getElementById("nameInput");
+
+  function shareUrl(code){
+    var web = location.protocol === "https:" || location.protocol === "http:";
+    return web ? location.origin + location.pathname + "#m=" + code : code;
+  }
+
+  function qrSvg(text){
+    var r;
+    try { r = QR.encode(text, "M"); }
+    catch (e){
+      try { r = QR.encode(text, "L"); }
+      catch (e2){ return "<p class='empty-note'>This monster has too many parts to fit in a code.</p>"; }
+    }
+    var q = 4, n = r.size, total = n + q * 2, d = "";
+    for (var y = 0; y < n; y++)
+      for (var x = 0; x < n; x++)
+        if (r.modules[y][x]) d += "M" + (x + q) + " " + (y + q) + "h1v1h-1z";
+    return '<svg viewBox="0 0 ' + total + ' ' + total + '" shape-rendering="crispEdges" ' +
+           'xmlns="http://www.w3.org/2000/svg"><rect width="' + total + '" height="' + total +
+           '" fill="#fff"/><path d="' + d + '" fill="#000"/></svg>';
+  }
+
+  function refreshShare(){
+    var code = encodeMonster(nameInput.value);
+    var url  = shareUrl(code);
+    qrCard.innerHTML = qrSvg(url);
+    codeLine.textContent = code;
+  }
+
+  document.getElementById("shareBtn").addEventListener("click", function(){
+    if (!stage.querySelector(".piece")) return;
+    select(null);
+    shareSheet.classList.add("open");
+    refreshShare();
+  });
+  nameInput.addEventListener("input", refreshShare);
+  document.getElementById("shareClose").addEventListener("click", function(){
+    shareSheet.classList.remove("open");
+  });
+  document.getElementById("copyBtn").addEventListener("click", function(){
+    var t = codeLine.textContent;
+    if (navigator.clipboard) navigator.clipboard.writeText(t);
+    else {
+      var ta = document.createElement("textarea");
+      ta.value = t; document.body.appendChild(ta); ta.select();
+      try { document.execCommand("copy"); } catch(e){}
+      ta.remove();
+    }
+  });
+
+  /* ---------- gallery ---------- */
+
+  var STORE = "monster-gallery";
+  var gallerySheet = document.getElementById("gallerySheet");
+  var galleryGrid  = document.getElementById("galleryGrid");
+  var galleryBtn   = document.getElementById("galleryBtn");
+  var bigSheet     = document.getElementById("bigSheet");
+
+  function loadGallery(){
+    try { return JSON.parse(localStorage.getItem(STORE) || "[]"); }
+    catch (e){ return []; }
+  }
+  function saveGallery(list){
+    try { localStorage.setItem(STORE, JSON.stringify(list)); } catch (e){}
+  }
+
+  function refreshGalleryBtn(){
+    var list = loadGallery();
+    galleryBtn.style.display = list.length ? "" : "none";
+    galleryBtn.querySelector(".lbl").textContent = "monsters (" + list.length + ")";
+  }
+
+  function openGallery(){
+    var list = loadGallery();
+    galleryGrid.innerHTML = "";
+    if (!list.length){
+      galleryGrid.innerHTML = "<p class='empty-note'>No monsters collected yet.</p>";
+    }
+    list.forEach(function(code, i){
+      var mon = decodeMonster(code);
+      if (!mon) return;
+      var card = document.createElement("div");
+      card.className = "g-card";
+      card.innerHTML = '<div class="g-stage"></div><div class="g-name"></div>';
+      card.querySelector(".g-name").textContent = mon.name || ("Monster " + (i + 1));
+      galleryGrid.appendChild(card);
+      paintMonster(card.querySelector(".g-stage"), mon);
+      card.addEventListener("click", function(){ openBig(mon, i); });
+    });
+    gallerySheet.classList.add("open");
+  }
+
+  function openBig(mon, i){
+    document.getElementById("bigName").textContent = mon.name || ("Monster " + (i + 1));
+    bigSheet.classList.add("open");
+    paintMonster(document.getElementById("bigStage"), mon);
+  }
+
+  galleryBtn.addEventListener("click", openGallery);
+  document.getElementById("galleryClose").addEventListener("click", function(){
+    gallerySheet.classList.remove("open");
+  });
+  document.getElementById("bigClose").addEventListener("click", function(){
+    bigSheet.classList.remove("open");
+  });
+  document.getElementById("galleryClear").addEventListener("click", function(){
+    saveGallery([]);
+    refreshGalleryBtn();
+    openGallery();
+  });
+
+  /* a monster arriving from a scanned code */
+  (function(){
+    var m = location.hash.match(/#m=([A-Za-z0-9\-_]+)/);
+    if (!m) return;
+    var code = m[1];
+    if (history.replaceState) history.replaceState(null, "", location.pathname);
+    if (!decodeMonster(code)) return;
+    var list = loadGallery();
+    if (list.indexOf(code) === -1){ list.push(code); saveGallery(list); }
+    refreshGalleryBtn();
+    setTimeout(openGallery, 60);
+  })();
+
+  refreshGalleryBtn();
 
   /* ---------- offline storage ---------- */
 
-  var VERSION = "v1";
+  var VERSION = "v3";
   var statusEl = document.getElementById("status");
 
   function showStatus(){

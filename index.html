@@ -53,7 +53,7 @@
     flex:0 0 auto;
     display:flex;align-items:center;justify-content:space-between;
     gap:12px;
-    padding:10px 16px;
+    padding:8px 14px;
     background:var(--shell-dark);
   }
   h1{
@@ -74,12 +74,13 @@
   .panel{
     flex:0 0 172px;
     display:flex;flex-direction:column;
-    gap:14px;
-    padding:14px 12px;
+    gap:10px;
+    padding:12px 10px;
     background:var(--panel);
-    overflow-y:auto;
-    -webkit-overflow-scrolling:touch;
+    overflow:hidden;
+    min-height:0;
   }
+  .parts-block{display:flex;flex-direction:column;flex:1 1 auto;min-height:0;}
 
   .field-label{
     font-size:11px;text-transform:uppercase;letter-spacing:1.4px;
@@ -103,15 +104,18 @@
   }
 
   .status{
-    margin-top:auto;padding-top:8px;
+    flex:0 0 auto;padding-top:4px;
     font-size:10px;letter-spacing:.9px;
     opacity:.45;text-align:center;
   }
 
-  .parts{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .parts{
+    display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:1fr;
+    gap:6px;flex:1 1 auto;min-height:0;
+  }
   .tile{
-    display:flex;flex-direction:column;align-items:center;gap:2px;
-    padding:6px 3px 4px;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
+    padding:4px 2px;min-height:0;overflow:hidden;
     background:var(--paper);
     border:3px solid var(--ink);
     border-radius:14px;
@@ -120,10 +124,11 @@
     transition:transform .12s ease;
   }
   .tile:active{transform:scale(.96);}
-  .tile svg{display:block;height:42px;width:auto;max-width:100%;}
+  .tile svg{display:block;flex:1 1 auto;width:100%;height:100%;min-height:0;}
   .tile span{
+    flex:0 0 auto;line-height:1.1;
     font-family:var(--font-display);
-    font-size:12px;color:var(--ink);
+    font-size:11px;color:var(--ink);
   }
 
   /* ---------- stage ---------- */
@@ -201,12 +206,12 @@
   footer{
     flex:0 0 auto;
     display:flex;gap:8px;justify-content:center;flex-wrap:wrap;
-    padding:10px 12px;
+    padding:8px 10px;
     background:var(--shell-dark);
   }
   .btn{
     display:flex;flex-direction:column;align-items:center;justify-content:center;
-    min-width:74px;padding:6px 12px 5px;
+    min-width:64px;padding:5px 9px 4px;
     font-family:var(--font-ui);
     background:var(--paper);color:var(--ink);
     border:3px solid var(--ink);border-radius:12px;
@@ -312,9 +317,9 @@
   .card .row{display:flex;gap:10px;justify-content:center;}
 
   @media (max-width:620px){
-    .panel{flex-basis:140px;}
-    .tile svg{height:34px;}
-    .btn{min-width:60px;padding:5px 8px 4px;}
+    .panel{flex-basis:132px;}
+    .btn{min-width:54px;padding:4px 6px 3px;}
+    .btn .lbl{font-size:10px;}
   }
 
   @media (prefers-reduced-motion:reduce){
@@ -347,7 +352,7 @@
           </select>
         </div>
       </div>
-      <div>
+      <div class="parts-block">
         <div class="field-label">parts</div>
         <div class="parts" id="parts"></div>
       </div>
@@ -375,7 +380,9 @@
   <footer>
     <button class="btn is-off" data-act="bigger"><span class="glyph">＋</span><span class="lbl">bigger</span></button>
     <button class="btn is-off" data-act="smaller"><span class="glyph">−</span><span class="lbl">smaller</span></button>
-    <button class="btn is-off" data-act="turn"><span class="glyph">↻</span><span class="lbl">turn</span></button>
+    <button class="btn is-off" data-act="turnL"><span class="glyph">↺</span><span class="lbl">turn left</span></button>
+    <button class="btn is-off" data-act="turnR"><span class="glyph">↻</span><span class="lbl">turn right</span></button>
+    <button class="btn is-off" data-act="flip"><span class="glyph">⇄</span><span class="lbl">flip</span></button>
     <button class="btn is-off" data-act="back"><span class="glyph">▤</span><span class="lbl">send back</span></button>
     <button class="btn is-off" data-act="delete"><span class="glyph">✕</span><span class="lbl">delete</span></button>
   </footer>
@@ -941,7 +948,7 @@ var QR = (function(){
     el.style.height = h + "px";
     el.innerHTML = svgFor(key, COLOURS[colName]);
 
-    state.set(el, { key:key, col:colName, x:cx, y:cy, scale:1, rot:0, z:++zTop, pointers:new Map(), gesture:null });
+    state.set(el, { key:key, col:colName, x:cx, y:cy, scale:1, rot:0, flip:1, z:++zTop, pointers:new Map(), gesture:null });
     stage.appendChild(el);
     place(el);
     bindPiece(el);
@@ -971,7 +978,8 @@ var QR = (function(){
     s.y = Math.max(16, Math.min(b.height - 16, s.y));
     el.style.left = s.x + "px";
     el.style.top  = s.y + "px";
-    el.style.transform = "translate(-50%,-50%) rotate(" + s.rot + "deg) scale(" + s.scale + ")";
+    el.style.transform = "translate(-50%,-50%) rotate(" + s.rot + "deg) scale(" +
+                         (s.scale * (s.flip || 1)) + "," + s.scale + ")";
   }
 
   function select(el){
@@ -1097,7 +1105,9 @@ var QR = (function(){
     switch (btn.dataset.act){
       case "bigger":  s.scale = Math.min(5, s.scale * 1.2); place(selected); break;
       case "smaller": s.scale = Math.max(0.25, s.scale / 1.2); place(selected); break;
-      case "turn":    s.rot += 30; place(selected); break;
+      case "turnL":   s.rot -= 30; place(selected); break;
+      case "turnR":   s.rot += 30; place(selected); break;
+      case "flip":    s.flip = -(s.flip || 1); place(selected); break;
       case "back":    s.z = 0; selected.style.zIndex = 0; break;
       case "delete":
         selected.remove();
@@ -1146,7 +1156,7 @@ var QR = (function(){
 
   var PART_ORDER   = ["body","arm","leg","head","eye","ear","nose","mouth","hair","horn","wing","tail"];
   var COLOUR_ORDER = ["red","blue","white","yellow","green","orange","purple","pink","brown","black"];
-  var FORMAT       = 1;
+  var FORMAT       = 2;   /* 1 = pre-flip codes, still readable */
 
   var B64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
 
@@ -1238,7 +1248,7 @@ var QR = (function(){
       bytes.push((pi << 4) | ci);
       bytes.push(clamp(Math.round(s.x / b.width  * 255), 0, 255));
       bytes.push(clamp(Math.round(s.y / b.height * 255), 0, 255));
-      bytes.push(clamp(Math.round(frac * 160), 1, 255));
+      bytes.push(clamp(Math.round(frac * 80), 1, 127) | (s.flip === -1 ? 128 : 0));
       bytes.push(((Math.round(s.rot / 360 * 256) % 256) + 256) % 256);
     });
 
@@ -1248,7 +1258,8 @@ var QR = (function(){
 
   function decodeMonster(code){
     var b = fromB64(code);
-    if (!b.length || b[0] !== FORMAT) return null;
+    var fmt = b[0];
+    if (!b.length || (fmt !== 1 && fmt !== 2)) return null;
     var p = 1, nlen = b[p++], nb = [];
     for (var i = 0; i < nlen; i++) nb.push(b[p++]);
     var name = utf8Decode(nb);
@@ -1258,7 +1269,9 @@ var QR = (function(){
       pieces.push({
         part:   b[p] >> 4,
         colour: b[p] & 15,
-        x: b[p+1], y: b[p+2], size: b[p+3], rot: b[p+4]
+        x: b[p+1], y: b[p+2], rot: b[p+4],
+        sizeFrac: fmt === 1 ? b[p+3] / 160 : (b[p+3] & 127) / 80,
+        flip:     fmt === 1 ? 1 : ((b[p+3] & 128) ? -1 : 1)
       });
       p += 5;
     }
@@ -1273,7 +1286,7 @@ var QR = (function(){
       var col = COLOUR_ORDER[pc.colour];
       if (!key || !PARTS[key] || !col) return;
       var part = PARTS[key];
-      var ph = (pc.size / 160) * h;
+      var ph = pc.sizeFrac * h;
       var pw = ph * part.vb[0] / part.vb[1];
 
       var el = document.createElement("div");
@@ -1282,7 +1295,8 @@ var QR = (function(){
       el.style.height = ph + "px";
       el.style.left   = (pc.x / 255 * w) + "px";
       el.style.top    = (pc.y / 255 * h) + "px";
-      el.style.transform = "translate(-50%,-50%) rotate(" + (pc.rot * 360 / 256) + "deg)";
+      el.style.transform = "translate(-50%,-50%) rotate(" + (pc.rot * 360 / 256) +
+                           "deg) scale(" + pc.flip + ",1)";
       el.innerHTML = svgFor(key, COLOURS[col]);
       box.appendChild(el);
     });
@@ -1422,7 +1436,7 @@ var QR = (function(){
 
   /* ---------- offline storage ---------- */
 
-  var VERSION = "v4";
+  var VERSION = "v5";
   var statusEl = document.getElementById("status");
 
   function showStatus(){

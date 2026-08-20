@@ -808,8 +808,7 @@ var QR = (function(){
 
   var PARTS = {
     body:   { label:"body", vb:[120,100], w:200, shapes:[
-      {d:"M62 5 C93 3 116 24 115 52 C114 81 91 97 59 96 C27 95 5 79 6 51 C7 23 32 7 62 5 Z", f:"col"},
-      {d:"M60 42 C77 42 90 53 90 66 C90 79 77 90 60 90 C43 90 30 79 30 66 C30 53 43 42 60 42 Z", f:"none", s:4}
+      {d:"M62 5 C93 3 116 24 115 52 C114 81 91 97 59 96 C27 95 5 79 6 51 C7 23 32 7 62 5 Z", f:"col"}
     ] },
     head:   { label:"head", vb:[100,90], w:132, shapes:[
       {d:"M20 4 H80 C90 4 96 12 96 22 V58 C96 72 88 84 74 86 L26 86 C12 84 4 72 4 58 V22 C4 12 10 4 20 4 Z", f:"col"}
@@ -845,8 +844,11 @@ var QR = (function(){
       {d:"M20 13 H31 V29 H20 Z M35 13 H46 V32 H35 Z M50 13 H61 V30 H50 Z M65 13 H74 V26 H65 Z", f:"#FFFFFF", s:3}
     ] },
     hair:   { label:"hair", vb:[100,62], w:112, shapes:[
-      {d:"M4 58 L13 16 L24 44 L36 6 L48 44 L60 14 L72 44 L84 12 L92 58 Z", f:"col"},
-      {d:"M13 52 V26 M36 52 V18 M60 52 V24 M84 52 V22", f:"none", s:3.5}
+      {d:"M4 58 C4 42 8 26 14 14 C16 9 21 10 22 16 L26 40 C28 27 33 12 38 6 C40 2 45 3 46 9 L49 38 C52 26 58 12 63 8 C66 4 71 6 71 12 L73 38 C77 27 83 19 87 17 C92 15 96 21 95 29 C96 41 96 50 95 58 Z", f:"col"},
+      {d:"M13 50 C12 40 14 30 17 24", f:"none", s:3.5},
+      {d:"M36 50 C35 38 38 26 41 18", f:"none", s:3.5},
+      {d:"M60 50 C59 38 62 26 65 18", f:"none", s:3.5},
+      {d:"M85 50 C84 40 86 32 89 27", f:"none", s:3.5}
     ] },
     horn:   { label:"horn", vb:[46,84], w:40, shapes:[
       {d:"M23 4 C30 12 40 46 42 74 C43 79 39 80 35 79 C29 77 17 77 11 79 C7 80 3 79 4 74 C6 46 16 12 23 4 Z", f:"col"},
@@ -1487,7 +1489,7 @@ var QR = (function(){
 
   /* ---------- offline storage ---------- */
 
-  var VERSION = "v6";
+  var VERSION = "v8";
   var statusEl = document.getElementById("status");
 
   function showStatus(){
